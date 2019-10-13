@@ -1,0 +1,19 @@
+{
+  "name": "process_runner",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JuneJobs/process_runner.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JuneJobs/process_runner/issues"
+  },
+  "homepage": "https://github.com/JuneJobs/process_runner#readme"
+}
