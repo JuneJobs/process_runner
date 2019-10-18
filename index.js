@@ -17,10 +17,9 @@ app.use("/", router);
 
 const childPool = [];
 
-let make_simulator = (simulator_wmac) => {
+let make_simulator = (simulator_wmac, cb) => {
     let ps = spawn('node', [`./runner.js`, simulator_wmac]);
     ps.stdout.on('data', (data) => {
-        console.log('' + data);
         data = '' + data;
         if(data.indexOf('ssn,') === 0) {
             let ssn = data.split(',');
@@ -30,7 +29,7 @@ let make_simulator = (simulator_wmac) => {
                     simulator.simulator_ssn = ssn[2];
                     return;
                 }
-            })
+            });
         } 
         if (data.indexOf('cid,') === 0) {
             let cid = data.split(',');
@@ -41,6 +40,7 @@ let make_simulator = (simulator_wmac) => {
                     return;
                 }
             })
+            cb(true);
         }
         if (data.indexOf('err,') === 0) {
             let arrMac = data.split(',');
@@ -52,6 +52,7 @@ let make_simulator = (simulator_wmac) => {
                     }
                 })    
             childPool.splice(idx, 1);
+            cb(false);
         }
     });
     ps.stderr.setEncoding('utf8');
@@ -71,16 +72,17 @@ let make_simulator = (simulator_wmac) => {
 let kill_simulator = (simulator_wmac, cb) => {
     let result = false,
         idx = -1;
-    childPool.map((obj_simulator, index) => {
+    childPool.some((obj_simulator, index) => {
         if(obj_simulator.simulator_wmac === simulator_wmac) {
             simulatorCon.run_dynamic_connection_deletion(obj_simulator.simulator_cid, (reslut)=> {
                 result = true;
                 idx =index;
                 obj_simulator.simulator.kill('SIGUSR2');
-            })
+                childPool.splice(idx, 1);
+            });
+            return (obj_simulator.simulator_wmac === simulator_wmac);
         }
     });
-    childPool.splice(idx, 1);
 
     cb(result);   
 }
@@ -99,9 +101,10 @@ router.post('/s_simulator_control', (req, res) => {
     switch(req.body.operation) {
         case 'run':
             s_id = req.body.simulator_wmac;
-            make_simulator(s_id);
-            res.send({
-                res_code: 0
+            make_simulator(s_id, (result)=> {
+                res.send({
+                    res_code: 0
+                });
             });
             break;
         case 'kill':

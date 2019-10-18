@@ -1,6 +1,7 @@
 
 const request = require('request'),
       requestURL = 'http://intuseer.co.kr:8001/s_api_v1_0';
+      //requestURL = 'http://localhost:8001';
 // function intervalFunc() {
 //     console.log(`simulator runing, ${process.argv[2]}`);
 // }
@@ -9,12 +10,13 @@ const request = require('request'),
 
 class Simulator {
     constructor() {
-
+        this.wmac = '';
+        this.cid = '';
     };
-    conn = (packedMsg, cb) => {
+    conn = (parse, packedMsg, cb) => {
         let options = {
             method: 'POST',
-            url: requestURL,
+            url: requestURL + parse,
             headers: {
                 'Cache-Control': 'no-cache',
                 'Content-Type': 'application/json'
@@ -24,14 +26,45 @@ class Simulator {
         };
         request(options, function (error, response, body) {
             if (error) {
-                logger.debug(`Server connection loss by ${JSON.stringify(packedMsg)}`);
+                console.error(`Server connection loss by ${JSON.stringify(packedMsg)}`);
             } else {
                 cb(body);
             }
         });
     };
+    get_generated_data = () => {
+        return Math.round(Math.random()*100);
+    }
+    data_transfer = () => {
+        this.get_generated_tuples((tuples)=>{
+            console.log('tuple',tuples);
+            this.run_realtime_airquality_data_transfer(tuples);
+        });
+    }
+    get_gps = (wmac, cb) => {
+        let params = {
+            "queryType": "GET",
+            "wmac": wmac
+        };
+        this.conn('/simulator', params, (result) => {
+            cb(result.gps);
+        })
+    }
+    get_generated_tuples = (cb) => {
+        let timestamp = Math.round(new Date().getTime()/1000);
+        this.get_gps(this.wmac, (gps) => {
+            let arrGps = gps.split(','),
+                lat = Number(arrGps[0]),
+                lng = Number(arrGps[1]),
+                tuples = [
+                [timestamp-2, this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), 1, lat, lng],
+                [timestamp-1, this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), 0],
+                [timestamp-0, this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), this.get_generated_data(), 0],
+            ]
+            cb(tuples);
+        });
+    }
     run_sensor_identifier_request = (wmac, cb) => {
-        console.log(wmac);
         let params = {
             "header": {
                 "msgType": 1,
@@ -42,25 +75,31 @@ class Simulator {
                 "wmac": wmac
             }
         };
-        this.conn(params, (result) => {
+        this.conn('/s_api_v1_0', params, (result) => {
             cb(result);
         })
     };
     run_dynamic_connection_addition = (ssn, cb) => {
-        let params = {
-            "header": {
-                "msgType": 3,
-                "msgLen": 0,
-                "endpointId":ssn
-            },
-            "payload": {
-                "lat": 32.88247,
-                "lng": -117.23484
-            }
-        }
-        this.conn(params, (result) => {
-            cb(result);
-            
+        
+        this.get_gps(this.wmac, (gps) => {
+            let arrGps = gps.split(','),
+                lat = Number(arrGps[0]),
+                lng = Number(arrGps[1]),
+                params = {
+                    "header": {
+                        "msgType": 3,
+                        "msgLen": 0,
+                        "endpointId":ssn
+                    },
+                    "payload": {
+                        "lat": lat,
+                        "lng": lng
+                    }
+                }     
+            this.conn('/s_api_v1_0', params, (result) => {
+                cb(result);
+                
+            });      
         });
     };
     run_dynamic_connection_deletion = (cid, cb) => {
@@ -73,7 +112,7 @@ class Simulator {
             "payload": {
             }
         }
-        this.conn(params, (result) => {
+        this.conn('/s_api_v1_0', params, (result) => {
             cb(result);
             
         });
@@ -81,12 +120,12 @@ class Simulator {
     run_dataGenerator = () => {
 
     }
-    run_realtime_airquality_data_transfer = (cid, data_tuples) => {
+    run_realtime_airquality_data_transfer = (data_tuples) => {
         let params = {
             "header": {
                 "msgType": 7,
                 "msgLen": 0,
-                "endpointId": cid
+                "endpointId": this.cid
             },
             "payload": {
                 "listEncodingType": 1,
@@ -96,8 +135,8 @@ class Simulator {
                 } 
             }
         }
-        this.conn(params, (result) => {
-            console.log('>>',result);
+        this.conn('/s_api_v1_0', params, (result) => {
+            console.log('Transfer successed');
         });
     }
 }
