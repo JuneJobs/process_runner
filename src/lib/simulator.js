@@ -1,4 +1,4 @@
-
+'use strict'
 const request = require('request'),
       requestURL = 'http://intuseer.co.kr:8001/s_api_v1_0';
       //requestURL = 'http://localhost:8001';
@@ -13,10 +13,10 @@ class Simulator {
         this.wmac = '';
         this.cid = '';
     };
-    conn = (parse, packedMsg, cb) => {
+    conn = (ls, packedMsg, cb) => {
         let options = {
             method: 'POST',
-            url: requestURL + parse,
+            url: requestURL + ls,
             headers: {
                 'Cache-Control': 'no-cache',
                 'Content-Type': 'application/json'
