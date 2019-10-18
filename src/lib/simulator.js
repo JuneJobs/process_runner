@@ -12,7 +12,7 @@ class Simulator {
     constructor() {
         this.wmac = '';
         this.cid = '';
-    };
+    }
     conn = (ls, packedMsg, cb) => {
         let options = {
             method: 'POST',
@@ -31,7 +31,7 @@ class Simulator {
                 cb(body);
             }
         });
-    };
+    }
     get_generated_data = () => {
         return Math.round(Math.random()*100);
     }
