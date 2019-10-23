@@ -1,6 +1,6 @@
 'use strict'
 const request = require('request'),
-      requestURL = 'http://intuseer.co.kr:8001/s_api_v1_0';
+      requestURL = 'http://somnium.me:8001';
       //requestURL = 'http://localhost:8001';
 // function intervalFunc() {
 //     console.log(`simulator runing, ${process.argv[2]}`);
